@@ -49,7 +49,8 @@ public class TestService {
         String text = node.getTextContent();
 
         if (text != null) {
-          System.out.printf("%s: %s: ", name, text);
+          String temp = name + ": " + text;
+          kafkaTemplate.send(TOPIC, temp);
         }
 
         System.out.println();
