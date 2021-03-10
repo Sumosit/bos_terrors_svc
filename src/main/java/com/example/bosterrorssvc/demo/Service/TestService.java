@@ -38,8 +38,8 @@ public class TestService {
       Element root = document.getDocumentElement();
       System.out.println(root.getNodeName());
 
-      DocumentTraversal trav = (DocumentTraversal) document;
-      NodeIterator it = trav.createNodeIterator(document.getDocumentElement(),
+      DocumentTraversal traversal = (DocumentTraversal) document;
+      NodeIterator it = traversal.createNodeIterator(document.getDocumentElement(),
           NodeFilter.SHOW_ELEMENT, null, true);
 
       for (Node node = it.nextNode(); node != null;
@@ -48,7 +48,10 @@ public class TestService {
         String name = node.getNodeName();
         String text = node.getTextContent();
 
-        System.out.printf("%s: %s: ", name, text);
+        if (text != null) {
+          System.out.printf("%s: %s: ", name, text);
+        }
+
         System.out.println();
       }
     } catch (Exception e) {
