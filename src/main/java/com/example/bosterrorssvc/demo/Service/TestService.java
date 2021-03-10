@@ -2,22 +2,19 @@ package com.example.bosterrorssvc.demo.Service;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 @Service
 public class TestService {
@@ -31,42 +28,31 @@ public class TestService {
   @Autowired
   private KafkaTemplate<Object, String> kafkaTemplate;
 
-  public void run(String id) throws IOException, URISyntaxException, SAXException, ParserConfigurationException {
+  public void run(String id) {
+    String fileName = "C:/Users/erlan/Downloads/task.xml";
     try {
-      DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-      String filename = "C:/Users/erlan/Downloads/task.xml";
-      Document document = documentBuilder.parse(filename);
-      Node root = document.getDocumentElement();
-      NodeList temps = root.getChildNodes();
-      for (int i = 0; i < temps.getLength(); i++) {
-        Node temp = temps.item(i);
-        if (temp.getNodeType() != Node.TEXT_NODE) {
-          NodeList tempProps = temp.getChildNodes();
-          for (int j = 0; j < tempProps.getLength(); j++) {
-            Node tempProp = tempProps.item(j);
-            if (tempProp.getNodeType() != Node.TEXT_NODE) {
-              kafkaTemplate.send(TOPIC, tempProp.getNodeName() + ":" + tempProp.getChildNodes().item(0).getTextContent());
-            }
-          }
-          System.out.println("");
-        }
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder builder = factory.newDocumentBuilder();
+      Document document = builder.parse(new File(fileName));
+      document.getDocumentElement().normalize();
+      Element root = document.getDocumentElement();
+      System.out.println(root.getNodeName());
+
+      DocumentTraversal trav = (DocumentTraversal) document;
+      NodeIterator it = trav.createNodeIterator(document.getDocumentElement(),
+          NodeFilter.SHOW_ELEMENT, null, true);
+
+      for (Node node = it.nextNode(); node != null;
+           node = it.nextNode()) {
+
+        String name = node.getNodeName();
+        String text = node.getTextContent();
+
+        System.out.printf("%s: %s: ", name, text);
+        System.out.println();
       }
     } catch (Exception e) {
       kafkaTemplate.send(TOPIC, e.getMessage());
     }
-
-    try {
-      String jsoupFilename = "C:/Users/erlan/Downloads/task.html";
-
-      File in = new File(jsoupFilename);
-      org.jsoup.nodes.Document doc = Jsoup.parse(in, null);
-      Elements names = doc.select("xml");
-      for (int i = 0; i < names.size(); i++) {
-        kafkaTemplate.send(TOPIC, names.get(i).toString());
-      }
-    } catch (Exception e) {
-      kafkaTemplate.send(TOPIC, e.getMessage());
-    }
-
   }
 }

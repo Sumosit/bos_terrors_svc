@@ -21,7 +21,7 @@ public class JobConfig {
     return TriggerBuilder.newTrigger().forJob(jobADetails)
 
         .withIdentity("ATestJobTrigger")
-        .withSchedule(CronScheduleBuilder.cronSchedule("0/10 * * ? * * *"))
+        .withSchedule(CronScheduleBuilder.cronSchedule("59 * * * * ?"))
         .build();
   }
 
