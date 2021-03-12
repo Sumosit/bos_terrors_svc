@@ -8,13 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.*;
-import org.w3c.dom.traversal.DocumentTraversal;
-import org.w3c.dom.traversal.NodeFilter;
-import org.w3c.dom.traversal.NodeIterator;
+import org.json.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
 
 @Service
 public class TestService {
@@ -22,8 +19,8 @@ public class TestService {
   private final Log logger = LogFactory.getLog(getClass());
 
   private int i = 0;
-  private String json = "";
   private boolean xml = false;
+  private String json = "";
 
   private static final String TOPIC = "test_topic";
 
@@ -40,12 +37,17 @@ public class TestService {
       if (doc.hasChildNodes()) {
         printNote(doc.getChildNodes());
       }
+      JSONObject jsonObject = XML.toJSONObject(this.json); // converts xml to json
+      String jsonPrettyPrintString = jsonObject.toString(4); // json pretty print
+      kafkaTemplate.send(TOPIC, jsonPrettyPrintString);
+
     } catch (Exception e) {
       kafkaTemplate.send(TOPIC, e.getMessage());
     }
+
   }
 
-  private void printNote(NodeList nodeList) throws JsonProcessingException {
+  private void printNote(NodeList nodeList) throws JsonProcessingException, JSONException {
     for (int count = 0; count < nodeList.getLength(); count++) {
       Node tempNode = nodeList.item(count);
 
@@ -53,15 +55,16 @@ public class TestService {
 
         if (tempNode.getNodeName().equals("xml")) {
           ObjectMapper jsonMapper = new ObjectMapper();
-          this.json = this.json + jsonMapper.writeValueAsString(tempNode);
+          this.json = jsonMapper.writeValueAsString(tempNode);
+          this.json = this.json.replace("\\n", "");
+          kafkaTemplate.send(TOPIC, this.json);
+
           this.xml = true;
+
         }
         if (this.xml) {
 //          System.out.println("\nNode Name =" + tempNode.getNodeName() + " [OPEN]");
 //          System.out.println("Node Value =" + tempNode.getTextContent());
-          if (tempNode.getNodeName().equals("o:OfficeDocumentSettings") ||
-              tempNode.getNodeName().equals("w:WordDocument")) {
-          }
 
           if (tempNode.hasAttributes()) {
             NamedNodeMap nodeMap = tempNode.getAttributes();
@@ -77,7 +80,7 @@ public class TestService {
 
         }
         if (tempNode.getNodeName().equals("xml")) {
-          kafkaTemplate.send(TOPIC, this.json);
+          System.out.println("Node Name =" + tempNode.getNodeName() + " [CLOSE]");
           this.xml = false;
         }
       }
