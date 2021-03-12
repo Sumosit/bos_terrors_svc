@@ -12,6 +12,8 @@ import org.json.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class TestService {
@@ -40,6 +42,18 @@ public class TestService {
       JSONObject jsonObject = XML.toJSONObject(this.json); // converts xml to json
       String jsonPrettyPrintString = jsonObject.toString(4); // json pretty print
       kafkaTemplate.send(TOPIC, jsonPrettyPrintString);
+      List<String> jsonList = Arrays.asList(jsonPrettyPrintString.split("\n"));
+      String temp = "";
+      for (int j = 2; j < jsonList.size() - 2; j++) {
+        if (jsonList.get(j).contains("},")) {
+          kafkaTemplate.send(TOPIC, temp);
+          temp = "";
+        }
+        temp = temp + jsonList.get(j) + "\n";
+      }
+      if (!temp.equals("")) {
+        kafkaTemplate.send(TOPIC, temp);
+      }
 
     } catch (Exception e) {
       kafkaTemplate.send(TOPIC, e.getMessage());
