@@ -2,8 +2,10 @@ package com.example.bosterrorssvc.demo.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Files;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,14 @@ import org.json.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,13 +39,18 @@ public class TestService {
   @Autowired
   private KafkaTemplate<Object, String> kafkaTemplate;
 
-  public void run(String id) {
-    String fileName = "C:/Users/erlan/Downloads/task.xml";
+  public void run(String id) throws IOException {
+    String url = "http://localhost:8080/user/storage/f3e8c362-a26b-4157-a509-3c32e1c88897";
     try {
+      URL website = new URL(url);
+      ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+      FileOutputStream fos = new FileOutputStream("information.xml");
+      fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
       DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance()
           .newDocumentBuilder();
-      Document doc = dBuilder.parse(fileName);
-//      System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+      Document doc = dBuilder.parse("information.xml");
+
+      //      System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
       if (doc.hasChildNodes()) {
         printNote(doc.getChildNodes());
       }
@@ -54,11 +69,9 @@ public class TestService {
       if (!temp.equals("")) {
         kafkaTemplate.send(TOPIC, temp);
       }
-
     } catch (Exception e) {
       kafkaTemplate.send(TOPIC, e.getMessage());
     }
-
   }
 
   private void printNote(NodeList nodeList) throws JsonProcessingException, JSONException {
