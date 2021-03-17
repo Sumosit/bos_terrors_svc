@@ -40,15 +40,19 @@ public class TestService {
   private KafkaTemplate<Object, String> kafkaTemplate;
 
   public void run(String id) throws IOException {
-    String url = "http://localhost:8080/user/storage/f3e8c362-a26b-4157-a509-3c32e1c88897";
+    String url = "https://afmrk.gov.kz/blacklist/export/active/xml";
     try {
-      URL website = new URL(url);
-      ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-      FileOutputStream fos = new FileOutputStream("information.xml");
-      fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-      DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance()
-          .newDocumentBuilder();
-      Document doc = dBuilder.parse("information.xml");
+
+      URL site = new URL(url);
+      DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+      Document doc = db.parse(site.openStream());
+//      URL website = new URL(url);
+//      ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+//      FileOutputStream fos = new FileOutputStream("information.xml");
+//      fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+//      DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance()
+//          .newDocumentBuilder();
+//      Document doc = dBuilder.parse("information.xml");
 
       //      System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
       if (doc.hasChildNodes()) {
